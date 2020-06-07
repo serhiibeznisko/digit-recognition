@@ -18,7 +18,7 @@ python3 manage.py runserver localhost:8001 --nothreading --noreload
 
 Now you can go to http://localhost:8001 and check the neural network accuracy.
 
-Structure of the project:
+### Structure of the project: ###
 
 ```
 ├── README.txt
