@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Recognition of handwritten numbers</title>
+
+    <script   src="https://code.jquery.com/jquery-3.5.1.min.js"   integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="   crossorigin="anonymous"></script>
+
+    <style>
+        body {
+            background: #2b2b2b;
+        }
+
+        canvas, #prediction {
+            background: #4c4c4c;
+            border-radius: 12px;
+            height: 256px;
+            width: 256px;
+            margin: 0 30px;
+            color: #1bd41c;
+            font-size: 120px;
+        }
+
+        #prediction {
+            text-align: center;
+            line-height: 256px;
+        }
+
+        .btn {
+            box-sizing: content-box;
+            border: none;
+            outline: none;
+            height: 42px;
+            padding: 0 14px;
+            background: #be0a65;
+            color: #fff;
+            border-radius: 3px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: #de0c76;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .displays {
+            display: flex;
+        }
+
+        .display-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        p {
+            color: #1bd41c;
+        }
+
+        .display-text {
+            font-size: 22px;
+        }
+
+        .actions {
+            display: flex;
+        }
+
+        .actions .btn {
+            margin: 0 6px;
+        }
+
+        .train {
+            margin-top: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #digit {
+            outline: none;
+            border: none;
+            background: #4c4c4c;
+            width: 80px;
+            color: #1bd41c;
+            font-size: 18px;
+            margin-left: 8px;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        .train-title {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container body-content">
+        <div class="displays">
+            <div class="display-group">
+                <p class="display-text">Narysuj cyfrę:</p>
+                <canvas id="myCanvas" height="256" width="256"></canvas>
+                <div class="train">
+                    <div class="train-title">
+                        <p>Podaj poprawną cyfrę:</p>
+                        <input type="number" max="9" min="0" id="digit">
+                    </div>
+                    <button id="train" class="btn btn-lg btn-success">Trenuj</button>
+                </div>
+            </div>
+            <div class="display-group">
+                <p class="display-text">Wynik zgadywania:</p>
+                <h1 id="prediction">*</h1>
+                <p>Dokładność: <span id="accuracy">*</span></p>
+                <div class="actions">
+                    <button id="clearArea" class="btn btn-lg btn-danger">Wyczyść</button>
+                    <button id="predict" class="btn btn-lg btn-success">Zgadnij</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        var mousePressed = false;
+        var lastX, lastY;
+        var ctx;
+
+        function InitThis() {
+            ctx = document.getElementById('myCanvas').getContext("2d");
+
+            $('#myCanvas').mousedown(function (e) {
+                mousePressed = true;
+                Draw(e.pageX - $(this).offset().left, e.pageY - $(this).offset().top, false);
+            });
+
+            $('#myCanvas').mousemove(function (e) {
+                if (mousePressed) {
+                    Draw(e.pageX - $(this).offset().left, e.pageY - $(this).offset().top, true);
+                }
+            });
+
+            $('#myCanvas').mouseup(function (e) {
+                mousePressed = false;
+            });
+            $('#myCanvas').mouseleave(function (e) {
+                mousePressed = false;
+            });
+
+            $("#clearArea").click(function () {
+                clearArea();
+            });
+
+            $("#train").click(function () {
+                train();
+            });
+
+            $("#predict").click(function () {
+                predict();
+            });
+        }
+
+        function Draw(x, y, isDown) {
+            if (isDown) {
+                ctx.beginPath();
+                ctx.strokeStyle = "#ffffff";
+                ctx.lineWidth = "32";
+                ctx.lineJoin = "round";
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.closePath();
+                ctx.stroke();
+            }
+            lastX = x; lastY = y;
+        }
+
+        function clearArea() {
+            ctx.setTransform(1, 0, 0, 1, 0, 0);
+            ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            $("#prediction").text("*");
+            $("#accuracy").text("*");
+        }
+
+        function train() {
+            var canvas = document.getElementById('myCanvas');
+            var digit = document.getElementById("digit");
+            $.ajax({
+                type: "POST",
+                url: '/ml/train',
+                data: {
+                    digit: parseInt(digit.value),
+                    imgBase64: canvas.toDataURL()
+                }
+            }).done(function (msg) {
+                clearArea();
+            });
+        }
+
+        function predict() {
+            var canvas = document.getElementById('myCanvas');
+            $("#prediction").text("*");
+            $.ajax({
+                type: "POST",
+                url: '/ml/predict',
+                data: {
+                    imgBase64: canvas.toDataURL()
+                }
+            }).done(function (msg) {
+                $("#prediction").text(msg.prediction);
+                $("#accuracy").text(Math.round(msg.accuracy * 10000) / 100 + "%");
+            });
+        }
+
+        InitThis();
+    </script>
+</body>
+</html>
