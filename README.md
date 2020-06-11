@@ -43,5 +43,3 @@ Now you can go to http://localhost:8001 and check the neural network accuracy.
 https://data-flair.training/blogs/python-deep-learning-project-handwritten-digit-recognition/  
 https://docs.djangoproject.com/en/3.0/  
 https://keras.io/api/  
-https://stackoverflow.com (forever in our hearts)  
-
